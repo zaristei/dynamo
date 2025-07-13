@@ -23,6 +23,7 @@ fi
 # Parse arguments
 mode=$1
 cmd=$2
+LOG_DIR="./logs"
 
 # Validate mode argument
 if [ "$mode" != "prefill" ] && [ "$mode" != "decode" ]; then
@@ -70,119 +71,47 @@ fi
 if [ "$mode" = "prefill" ]; then
     if [ "$cmd" = "dynamo" ]; then
         # H100 dynamo prefill command
-        python3 components/worker.py \
-            --model-path /model/ \
-            --served-model-name deepseek-ai/DeepSeek-R1 \
-            --skip-tokenizer-init \
-            --disaggregation-mode prefill \
-            --disaggregation-transfer-backend nixl \
-            --disaggregation-bootstrap-port 30001 \
-            --dist-init-addr "$HOST_IP:$PORT" \
-            --nnodes "$TOTAL_NODES" \
-            --node-rank "$RANK" \
-            --tp-size "$TOTAL_GPUS" \
-            --dp-size "$TOTAL_GPUS" \
-            --enable-dp-attention \
-            --decode-log-interval 1 \
-            --enable-deepep-moe \
-            --page-size 1 \
-            --trust-remote-code \
-            --moe-dense-tp-size 1 \
-            --enable-dp-lm-head \
-            --disable-radix-cache \
-            --watchdog-timeout 1000000 \
-            --enable-two-batch-overlap \
-            --deepep-mode normal \
-            --mem-fraction-static 0.85 \
-            --deepep-config /configs/deepep.json \
-            --ep-num-redundant-experts 32 \
-            --ep-dispatch-algorithm dynamic \
-            --eplb-algorithm deepseek
+        VLLM_ALL2ALL_BACKEND="deepep_low_latency" \
+        VLLM_USE_DEEP_GEMM=1 \
+        VLLM_RANDOMIZE_DP_DUMMY_INPUTS=1 \
+        python3 components/main.py \
+        --model deepseek-ai/DeepSeek-R1 \
+        --data_parallel_size $TOTAL_GPUS \
+        --data-parallel-rank $RANK \
+        --enable-expert-parallel \
+        --max-model-len 10240 \
+        --data-parallel-address $HOST_IP \
+        --data-parallel-rpc-port 13345 \
+        --gpu-memory-utilization 0.95 \
+        --enforce-eager \
+        --is-prefill-worker \
+        --kv-events-port 49700 2>&1 | tee $LOG_DIR/dsr1_dep_${dp_rank}.log &
     elif [ "$cmd" = "sglang" ]; then
         # H100 sglang prefill command
-        python3 -m sglang.launch_server \
-            --model-path /model/ \
-            --served-model-name deepseek-ai/DeepSeek-R1 \
-            --disaggregation-transfer-backend nixl \
-            --disaggregation-mode prefill \
-            --dist-init-addr "$HOST_IP:$PORT" \
-            --nnodes "$TOTAL_NODES" \
-            --node-rank "$RANK" \
-            --tp-size "$TOTAL_GPUS" \
-            --dp-size "$TOTAL_GPUS" \
-            --enable-dp-attention \
-            --decode-log-interval 1 \
-            --enable-deepep-moe \
-            --page-size 1 \
-            --host 0.0.0.0 \
-            --trust-remote-code \
-            --moe-dense-tp-size 1 \
-            --enable-dp-lm-head \
-            --disable-radix-cache \
-            --watchdog-timeout 1000000 \
-            --enable-two-batch-overlap \
-            --deepep-mode normal \
-            --mem-fraction-static 0.85 \
-            --ep-num-redundant-experts 32 \
-            --ep-dispatch-algorithm dynamic \
-            --eplb-algorithm deepseek \
-            --deepep-config /configs/deepep.json
+        echo "Error: sglang command not implemented here"
+        exit 1
     fi
 elif [ "$mode" = "decode" ]; then
     if [ "$cmd" = "dynamo" ]; then
         # H100 dynamo decode command
-        python3 components/decode_worker.py \
-            --model-path /model/ \
-            --served-model-name deepseek-ai/DeepSeek-R1 \
-            --skip-tokenizer-init \
-            --disaggregation-mode decode \
-            --disaggregation-transfer-backend nixl \
-            --disaggregation-bootstrap-port 30001 \
-            --dist-init-addr "$HOST_IP:$PORT" \
-            --nnodes "$TOTAL_NODES" \
-            --node-rank "$RANK" \
-            --tp-size "$TOTAL_GPUS" \
-            --dp-size "$TOTAL_GPUS" \
-            --enable-dp-attention \
-            --decode-log-interval 1 \
-            --enable-deepep-moe \
-            --page-size 1 \
-            --trust-remote-code \
-            --moe-dense-tp-size 1 \
-            --enable-dp-lm-head \
-            --disable-radix-cache \
-            --watchdog-timeout 1000000 \
-            --enable-two-batch-overlap \
-            --deepep-mode low_latency \
-            --mem-fraction-static 0.835 \
-            --ep-num-redundant-experts 32 \
-            --cuda-graph-bs 256
+        VLLM_ALL2ALL_BACKEND="deepep_low_latency" \
+        VLLM_USE_DEEP_GEMM=1 \
+        VLLM_RANDOMIZE_DP_DUMMY_INPUTS=1 \
+        python3 components/main.py \
+        --model deepseek-ai/DeepSeek-R1 \
+        --data_parallel_size $TOTAL_GPUS \
+        --data-parallel-rank $RANK \
+        --enable-expert-parallel \
+        --max-model-len 10240 \
+        --data-parallel-address $HOST_IP \
+        --data-parallel-rpc-port 13345 \
+        --gpu-memory-utilization 0.95 \
+        --enforce-eager \
+        --kv-events-port 49700 2>&1 | tee $LOG_DIR/dsr1_dep_${dp_rank}.log &
     elif [ "$cmd" = "sglang" ]; then
         # H100 sglang decode command
-        python3 -m sglang.launch_server \
-            --model-path /model/ \
-            --disaggregation-transfer-backend nixl \
-            --disaggregation-mode decode \
-            --dist-init-addr "$HOST_IP:$PORT" \
-            --nnodes "$TOTAL_NODES" \
-            --node-rank "$RANK" \
-            --tp-size "$TOTAL_GPUS" \
-            --dp-size "$TOTAL_GPUS" \
-            --enable-dp-attention \
-            --decode-log-interval 1 \
-            --enable-deepep-moe \
-            --page-size 1 \
-            --host 0.0.0.0 \
-            --trust-remote-code \
-            --moe-dense-tp-size 1 \
-            --enable-dp-lm-head \
-            --disable-radix-cache \
-            --watchdog-timeout 1000000 \
-            --enable-two-batch-overlap \
-            --deepep-mode low_latency \
-            --mem-fraction-static 0.835 \
-            --ep-num-redundant-experts 32 \
-            --cuda-graph-bs 256
+        echo "Error: sglang command not implemented here"
+        exit 1
     fi
 fi
 
