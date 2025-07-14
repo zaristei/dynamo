@@ -263,9 +263,9 @@ def setup_head_prefill_node(prefill_host_ip: str) -> None:
 
     logging.info(f"Starting etcd server on node {prefill_host_ip}")
     etcd_cmd = (
-        f"etcd --listen-client-urls {ETCD_LISTEN_ADDR}:{ETCD_CLIENT_PORT} "
-        f"--advertise-client-urls {ETCD_LISTEN_ADDR}:{ETCD_CLIENT_PORT} "
-        f"--listen-peer-urls {ETCD_LISTEN_ADDR}:{ETCD_PEER_PORT} "
+        f"etcd --listen-client-urls {prefill_host_ip}:{ETCD_CLIENT_PORT} "
+        f"--advertise-client-urls {prefill_host_ip}:{ETCD_CLIENT_PORT} "
+        f"--listen-peer-urls {prefill_host_ip}:{ETCD_PEER_PORT} "
         f"--initial-cluster default=http://{prefill_host_ip}:{ETCD_PEER_PORT}"
     )
 
