@@ -74,7 +74,7 @@ if [ "$mode" = "prefill" ]; then
         VLLM_ALL2ALL_BACKEND="deepep_low_latency" \
         VLLM_USE_DEEP_GEMM=1 \
         VLLM_RANDOMIZE_DP_DUMMY_INPUTS=1 \
-        python3 components/main.py \
+        python3 examples/vllm_v1/components/main.py \
         --model deepseek-ai/DeepSeek-R1 \
         --data_parallel_size $TOTAL_GPUS \
         --data-parallel-rank $RANK \
@@ -97,7 +97,7 @@ elif [ "$mode" = "decode" ]; then
         VLLM_ALL2ALL_BACKEND="deepep_low_latency" \
         VLLM_USE_DEEP_GEMM=1 \
         VLLM_RANDOMIZE_DP_DUMMY_INPUTS=1 \
-        python3 components/main.py \
+        python3 examples/vllm_v1/components/main.py \
         --model deepseek-ai/DeepSeek-R1 \
         --data_parallel_size $TOTAL_GPUS \
         --data-parallel-rank $RANK \
