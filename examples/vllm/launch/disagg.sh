@@ -7,9 +7,9 @@ trap 'echo Cleaning up...; kill 0' EXIT
 # run ingress
 dynamo run in=http out=dyn &
 
-CUDA_VISIBLE_DEVICES=0 python3 components/main.py --model Qwen/Qwen3-0.6B --enforce-eager &
+CUDA_VISIBLE_DEVICES=0 UCX_TLS=^gdr_copy python3 components/main.py --model Qwen/Qwen3-0.6B --enforce-eager &
 
-CUDA_VISIBLE_DEVICES=1 python3 components/main.py \
+CUDA_VISIBLE_DEVICES=1 UCX_TLS=^gdr_copy python3 components/main.py \
     --model Qwen/Qwen3-0.6B \
     --enforce-eager \
     --is-prefill-worker
